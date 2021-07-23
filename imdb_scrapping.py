@@ -136,7 +136,10 @@ for year_url in years_url:
                         staff4 = staff4.next_sibling
                     else: staff4 = []
                     
-                    sec_actor = staff4['href']
+                    try:
+                        sec_actor_code = staff4['href']
+                    except Exception:
+                        sec_actor_code = ''
                     
                 ##Now, create a list with our main actor and director codes. We won't use the secondary ones.
                 final_staff = [main_director_code, main_actor_code] #, sec_direc_code, sec_actor_code]
