@@ -124,7 +124,7 @@ for year_url in years_url:
                 main_actor_code= []
                 
                 #The url are after the "Stars" text.
-                if 'Star:' in str(staff2):
+                if 'Star' in str(staff2):
                     staff3 = staff2.next_sibling
                     main_actor_code = staff3['href']
                                     
