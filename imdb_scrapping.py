@@ -113,8 +113,8 @@ for year_url in years_url:
                         staff5 = staff5.next_sibling
                     else: staff5 = []
                     
-                    if staff5 != a:
-                        sec_direc = staff5['href']
+                    #if staff5 != a:
+                    #    sec_direc = staff5['href']
                 
                 ##Find the primary actor url.
                 #Create a new var, staff2, with the info we need.
