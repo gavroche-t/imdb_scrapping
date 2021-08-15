@@ -10,10 +10,16 @@ from random import randint
 headers = {"Accept-Language": "en-US, en;q=0.5"}
 
 #List has all the beginning movies of each page. IMDb, by default, has 50 itens per page.
-list = [1, 51]
-pages = [str(i) for i in list]
-#Years_url has the initial and final year that the want to loop. 
-years_url = [str(i) for i in range(2000, 2020)]
+first_page = 151
+last_page = 651
+movies_per_page = 50
+pagelist = range(first_page, last_page, movies_per_page)
+pages = [str(i) for i in pagelist]
+#Years_url has the initial and final year that the want to loop.
+first_year = 2016
+last_year = 2017
+yearlist = range(first_year, last_year)
+years_url = [str(i) for i in yearlist]
 
 ##Define the vectors used for appending the infos:
 
@@ -46,7 +52,7 @@ gross_usa_all = []
 gross_world_all = []
 opening_week_us_can_all = []
 genres_mov_all = []
-
+a = []
 
 ##Create the first loop, with year:
 for year_url in years_url:
@@ -79,28 +85,31 @@ for year_url in years_url:
             #We only want movies, no series. Series don't have Metascore.
             if container.find('div', class_ = 'ratings-metascore') is not None:
                 
-                #Get the name and append it to the main name list.
-                name = container.h3.a.text
-                names_all.append(name)
-                
-                print(f'''We are in the movie {counter}, {name}''')
-                
-                #Now, we want to find the links to extract the url to director and actor infos. 
-                #All these infos are inside the 'staff' list.
-                #Staff only works because there is only one 'p' with null class in each container!
-                staff = container.find_all('p', class_='')
-                                
-                ##Find primary director url.
-                director = []
-                #Staff1 gets the first element in staff and finds the first 'a' in the tree.
-                staff1 = staff[0].a
-                #Our url is contained in the href. 
-                main_director_code=str(staff1['href'])
-                
-                #Define a variable a as empty list, for future comparison.
-                #Find secondary director url (if existing). 
-                #Although we get it, we don't use it.
-                a = []
+                try:
+                    #Get the name and append it to the main name list.
+                    name = container.h3.a.text
+                    names_all.append(name)
+                    
+                    print(f'''We are in the movie {counter}, {name}''')
+                    
+                    #Now, we want to find the links to extract the url to director and actor infos. 
+                    #All these infos are inside the 'staff' list.
+                    #Staff only works because there is only one 'p' with null class in each container!
+                    staff = container.find_all('p', class_='')
+                                    
+                    ##Find primary director url.
+                    director = []
+                    #Staff1 gets the first element in staff and finds the first 'a' in the tree.
+                    staff1 = staff[0].a
+                    #Our url is contained in the href. 
+                    main_director_code=str(staff1['href'])
+                    
+                    #Define a variable a as empty list, for future comparison.
+                    #Find secondary director url (if existing). 
+                    #Although we get it, we don't use it.
+                    #a = []
+                except Exception:
+                    main_director_code = a
                 
                 #Create an if clause in case there's no url in IMDb.
                 if  main_director_code != a:
@@ -118,8 +127,10 @@ for year_url in years_url:
                 
                 ##Find the primary actor url.
                 #Create a new var, staff2, with the info we need.
-                staff2 = staff[0].span.next_sibling
-                
+                try:
+                    staff2 = staff[0].span.next_sibling
+                except Exception:
+                    staff2 = a
                 #Define our list.
                 main_actor_code= []
                 
@@ -127,7 +138,8 @@ for year_url in years_url:
                 if 'Star' in str(staff2):
                     staff3 = staff2.next_sibling
                     main_actor_code = staff3['href']
-                                    
+                else:
+                    main_actor_code = a                    
                 ##Find the secondary actor url.
                 ##Reminder: a = []
                 if main_actor_code != a: 
@@ -154,7 +166,7 @@ for year_url in years_url:
                 #For each element in final staff (director and actor urls).
                 for i in final_staff:
                     
-                    if i != a:
+                    if i == main_director_code and main_director_code != a:
                         #We access a new page in IMDb with the url extracted.
                         url = f'''https://www.imdb.com{i}'''
                         response1 = requests.get(url)
@@ -193,9 +205,13 @@ for year_url in years_url:
                             print('Year of birth director:', year_birth_direc)
 
                             #Number of points (movies directed)
-                            dic_points = general[0].a.next_sibling
-                            dic_points_all.append(dic_points)
-
+                            try:
+                                dic_points = general[0].a.next_sibling
+                                dic_points_all.append(dic_points)
+                            except Exception:
+                                dic_points = 'null'
+                                dic_points_all.append(dic_points)
+                                
                             #Gender info:
                             #To do so, as there is no specific info about the gender, 
                             #We analize the bio and infer based on text analysis.
@@ -251,23 +267,23 @@ for year_url in years_url:
 
                             elif " His " in str(bio_dic):
                                 if " Hers " not in str(bio_dic):
-                                    gender_dic1 = 'male'
-                                else: gender_dic1 = 'not sure'
+                                    gender_dic = 'male'
+                                else: gender_dic = 'not sure'
 
                             elif " Hers " in str(bio_dic):
                                 if " His " not in str(bio_dic):
-                                    gender_dic1 = 'female'
-                                else: gender_dic1 = 'not sure'
+                                    gender_dic = 'female'
+                                else: gender_dic = 'not sure'
 
                             elif " Him " in str(bio_dic):
                                 if " Her " not in str(bio_dic):
-                                    gender_dic1 = 'male'
-                                else: gender_dic1 = 'not sure'
+                                    gender_dic = 'male'
+                                else: gender_dic = 'not sure'
 
                             elif " Her " in str(bio_dic):
                                 if " Him " not in str(bio_dic):
-                                    gender_dic1 = 'female'
-                                else: gender_dic1 = 'not sure'
+                                    gender_dic = 'female'
+                                else: gender_dic = 'not sure'
 
                             else: gender_dic = 'not sure'
                             print("Director's gender is: ", gender_dic)
@@ -275,9 +291,14 @@ for year_url in years_url:
                             print("""Director page finished.
                             ---------------------
 
-                            """)
-
+                            """)        
                             
+                            
+                    if i == main_actor_code and main_actor_code != a:
+                        url = f'''https://www.imdb.com{i}'''
+                        response1 = requests.get(url)
+                        sleep(randint(2,5))
+                        soup1 = BS(response1.text, 'lxml')
                         ##Now, for the actor scrapping:
                         if i == main_actor_code and not read_actor:
                             read_actor = True
@@ -322,18 +343,24 @@ for year_url in years_url:
                             try:
                                 map_gender = soup1.find_all('div', attrs={"id":"name-job-categories"})
                                 gender_while = map_gender[0].a
-                            except Exception:
+                            except Exception as excpt:
                                 gen_act = "not sure"
-
+                                print("A exceção foi", excpt)
+                            print(gender_while)
+                            
                             try:
-                                while "Act" not in str(gender_while):
-                                    gender_while = gender_while.next_sibling
-                                print("While is:", gender_while)
-                                gen_act = gender_while.text.strip().lower()
-                                print("Actor gender was:", gen_act)
-                            except Exception:
+                                if "Act" not in str(gender_while):
+                                    while "Act" not in str(gender_while):
+                                        gender_while = gender_while.next_sibling
+                                        print("While is:", gender_while)
+                                        if "Act" in str(gender_while):
+                                            gen_act = gender_while.text.strip().lower()
+                                if "Act" in str(gender_while):
+                                        gen_act = gender_while.text.strip().lower()
+                            except Exception as excpt:
                                 gen_act = "not sure"
                                 print("Actor's while error.")
+                                print("A exceção foi", excpt)
 
                             #Gender extraction:
                             if gen_act == 'actor':
@@ -357,7 +384,37 @@ for year_url in years_url:
                             print("""Actor page finished.
                             ---------------
                             """)
-                
+                            
+                    if i == main_director_code and main_director_code == a:
+                        print('No director :(')
+                        place_birth_direc = 'null'
+                        year_birth_direc = 'null'
+                        gender_dic = 'not sure'
+                        gender_dic1 = 'not sure'
+                        dic_points = 'null'
+                        
+                        place_birth_direc_all.append(place_birth_direc)
+                        year_birth_direc_all.append(place_birth_direc)
+                        gender_dic_all.append(gender_dic)
+                        gender_dic1_all.append(gender_dic1)
+                        dic_points_all.append(dic_points)
+                    
+                    if i == main_actor_code and main_actor_code == a:
+                        print('No actor :(')
+                        place_birth_act = 'null'
+                        year_birth_act = 'null'
+                        gender_actor = 'not sure'
+                        actor_points = 'null'
+                        actor_placement = 'null'
+                        
+                        place_birth_act_all.append(place_birth_direc)
+                        year_birth_act_all.append(place_birth_direc)
+                        gender_actor_all.append(gender_dic)
+                        actor_points_all.append(dic_points)
+                        actor_placement_all.append(actor_placement)
+                        
+                        
+                        
                 ##Reminder: a = []
                 #Movie specific infos scrapping:
                 #name_code has the movies url.
@@ -498,30 +555,53 @@ for year_url in years_url:
 
                 #Back to the original page (where the container was):
                 
-                year = container.h3.find('span', class_="lister-item-year text-muted unbold").text
+                try:
+                    year = container.h3.find('span', class_="lister-item-year text-muted unbold").text
+                except Exception:
+                    year = 'null'
                 years_all.append(year)
-
-                time = container.p.find('span', class_="runtime").text
+                
+                try:
+                    time = container.p.find('span', class_="runtime").text
+                except Exception:
+                    time = 'null'
                 time_all.append(time)
 
-                ratings = container.find('div', class_="ratings-bar")
+                try:
+                    ratings = container.find('div', class_="ratings-bar")
+                except Exception:
+                    ratings = 'null'
                 ratings_all.append(ratings)
-
-                imdb = ratings.strong.text
+                
+                try:
+                    imdb = ratings.strong.text
+                except Exception:
+                    imdb = 'null'
                 imdb_all.append(imdb)
-
-                m_score = container.find('span', class_ = 'metascore').text
+                
+                try:
+                    m_score = container.find('span', class_ = 'metascore').text
+                except Exception:
+                    m_score = 'null'
                 metascore_all.append(int(m_score))
-        
-                final_section = container.find('p', class_="sort-num_votes-visible")
+                
+                try:
+                    final_section = container.find('p', class_="sort-num_votes-visible")
+                except Exception:
+                    final_section = 'null'
                 final_section_all.append(final_section)
 
-                conjunto_cod = final_section.find_all('span', attrs = {'name':'nv'})
+                try:
+                    conjunto_cod = final_section.find_all('span', attrs = {'name':'nv'})
+                except Exception:
+                    conjunto_cod = 'null'
                 conjunto_cod_all.append(conjunto_cod)
 
-                conjunto = [my_tag.text for my_tag in final_section.find_all('span', attrs = {'name':'nv'})]
+                try:
+                    conjunto = [my_tag.text for my_tag in final_section.find_all('span', attrs = {'name':'nv'})]
+                except Exception:
+                    conjunto = 'null'
                 conjunto_all.append(conjunto)
-                
                 
                 votes_all = [item[0] for item in conjunto_all]
                 revenue_all = [item[-1] for item in conjunto_all]
@@ -570,7 +650,6 @@ test_df = pd.DataFrame(
      'imdb': imdb_all,
      'metascore': metascore_all,
      'votes imdb': votes_all,
-     'revenue gross': revenue_all,
      'actor_gender': gender_actor_all,
      'director nation': place_birth_direc_all,
      'actor nation': place_birth_act_all,
@@ -592,17 +671,11 @@ test_df = pd.DataFrame(
 table1 = test_df.copy()
 
 #Data cleaning.
-table1.loc[:, 'year'] = table1['year'].str[-5:-1].astype(int)
+table1.loc[:, 'year'] = table1['year'].str[-5:-1]
 
-table1['duration'] = [int(i.split()[0]) for i in table1['duration']]
+table1['duration'] = [i.split()[0] for i in table1['duration']]
 
-table1['imdb'] = [float(i) for i in table1['imdb']]
-
-table1['metascore'] = [int(i) for i in table1['metascore']]
-
-table1['votes imdb'] = [int(i.replace(',', '')) for i in table1['votes imdb']]
-
-table1['revenue gross'] = [float(i[1:-1]) if '$' in i else float(i.replace(',',''))*0.000001 for i in table1['revenue gross']]
+table1['votes imdb'] = [i.replace(',', '') for i in table1['votes imdb']]
 
 table1['director nation'] = [i.split(',')[-1].strip() for i in table1['director nation']]
 
@@ -702,14 +775,12 @@ for j in range(len(table1['movie'])):
         table1['director points'][j] = int(table1['director points'][j][2:4])
     except Exception as err3:
         table1['director points'][j] = 'null'
-        print('direc_points - deu ruim porque ', err3)
 
     try: 
         table1['actor points'][j] = int(table1['actor points'][j][2:4])
     except Exception as err4:
         table1['actor points'][j] = 'null'
-        print('act_points - deu ruim porque ', err4)
-
+ 
     try: 
         table1['actor placement'][j] = int(table1['actor placement'][j])
     except Exception as err5:
@@ -719,12 +790,11 @@ for j in range(len(table1['movie'])):
         table1['year birth director'][j] = int(table1['year birth director'][j])
     except Exception as err6:
         table1['year birth director'][j] = 'null'
-        print('yr birth dir deu ruim porque ', err6)
+
     try:
         table1['year birth actor'][j] = int(table1['year birth actor'][j])
     except Exception as err7:
         table1['year birth actor'][j] = 'null'
-        print('yr birth act deu ruim porque ', err7)
         
     try:
         table1['total budget'][j] = int(table1['total budget'][j])
@@ -745,6 +815,31 @@ for j in range(len(table1['movie'])):
         table1['revenue gross USA'][j] = int(table1['revenue gross USA'][j])
     except Exception as err8:
         table1['revenue gross USA'][j] = 'null'
+    
+    try:
+        table1['year'][j] = int(table1['year'][j])
+    except Exception as err8:
+        table1['year'][j] = 'null'       
+    
+    try:
+        table1['duration'][j] = int(table1['duration'][j])
+    except Exception as err8:
+        table1['duration'][j] = 'null'  
+    
+    try:
+        table1['imdb'][j] = float(table1['imdb'][j])
+    except Exception as err8:
+        table1['imdb'][j] = 'null'
+         
+    try:
+        table1['metascore'][j] = float(table1['metascore'][j])
+    except Exception as err8:
+        table1['metascore'][j] = 'null'
+        
+    try:
+        table1['votes imdb'][j] = float(table1['votes imdb'][j])
+    except Exception as err8:
+        table1['votes imdb'][j] = 'null'
         
         
 ##Joining gender columns:
@@ -768,5 +863,4 @@ gender_df['gender director'] = temp[:]
 table1['gender director'] = gender_df['gender director']
 
 #Converting to csv:
-table1.to_csv('IMDB_scrapping.csv')
-table1
+table1.to_csv(f'''IMDB_scrapping_{first_year}to{last_year}_{first_page}to{last_page-1}.csv''')
